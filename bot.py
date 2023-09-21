@@ -37,13 +37,14 @@ async def get_users_to_send():
 async def send_mails():
     users_to_send = await get_users_to_send()
     mails = process_messages()
-    for user in users_to_send:
-        for mail in mails:
-            message = f"Тема: {mail['mail_subject']}\nТекст: {mail['mail_text']}"
-            await bot.send_message(int(user), message)
-            for attach in mail["mail_attachments"]:
-                file_path = f"./attach/{mail['now_date']}/{attach}"
-                await bot.send_document(int(user), InputFile(file_path))
+    if mails != []:
+        for user in users_to_send:
+            for mail in mails:
+                message = f"Тема: {mail['mail_subject']}\nТекст: {mail['mail_text']}"
+                await bot.send_message(int(user), message)
+                for attach in mail["mail_attachments"]:
+                    file_path = f"./attach/{mail['now_date']}/{attach}"
+                    await bot.send_document(int(user), InputFile(file_path))
 
 
 async def scheduler() -> None:
