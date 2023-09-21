@@ -3,9 +3,8 @@ import asyncio
 import aioschedule
 from aiogram import Bot, Dispatcher, executor, types
 from dotenv import load_dotenv
-from mail import get_mails
+from mail import process_messages
 from aiogram.types import InputFile
-
 
 
 load_dotenv()
@@ -25,17 +24,19 @@ async def start_command(msg: types.Message):
     else:
         await msg.answer('У вас есть доступ, теперь вы будете получать сообщения об ошибках.')
 
+
 async def get_users_to_send():
     users = []
     with open('./confirmed_users.txt', 'r') as file:
         for line in file:
             users.append(line.strip())
-        
+
     return users
+
 
 async def send_mails():
     users_to_send = await get_users_to_send()
-    mails = await get_mails()
+    mails = process_messages()
     for user in users_to_send:
         for mail in mails:
             message = f"Тема: {mail['mail_subject']}\nТекст: {mail['mail_text']}"
@@ -44,16 +45,18 @@ async def send_mails():
                 file_path = f"./attach/{mail['now_date']}/{attach}"
                 await bot.send_document(int(user), InputFile(file_path))
 
+
 async def scheduler() -> None:
     minutes = os.getenv("CHECK_MINUTES")
     aioschedule.every(int(minutes)).minutes.do(send_mails)
     while True:
         await aioschedule.run_pending()
         await asyncio.sleep(1)
-        
+
+
 async def on_startup(_) -> None:
     asyncio.create_task(scheduler())
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
